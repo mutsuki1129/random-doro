@@ -1,15 +1,16 @@
 const express = require('express');
-const server = express();
-// Render 會透過環境變數提供 PORT，預設通常是 10000
-const PORT = process.env.PORT || 3000; 
+const app = express();
 
-server.all('/', (req, res) => {
-  res.send('Doro Bot is alive and running on Render!');
+// 關鍵點：Render 會透過環境變數 process.env.PORT 給你一個連接埠
+const port = process.env.PORT || 3000;
+
+app.get('/', (req, res) => {
+  res.send('Doro Bot is Online!');
 });
 
 function keepAlive() {
-  server.listen(PORT, () => {
-    console.log(`伺服器已準備就緒，監聽連接埠：${PORT}`);
+  app.listen(port, () => {
+    console.log(`Web Server 正在監聽連接埠： ${port}`);
   });
 }
 
