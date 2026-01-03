@@ -1,3 +1,4 @@
+const keepAlive = require('./keep_alive');
 // index.js (更新版)
 require('dotenv').config();
 // 引入所需的元件
@@ -68,4 +69,5 @@ client.on('interactionCreate', async interaction => {
     }
 });
 
+keepAlive();
 client.login(DISCORD_TOKEN);
