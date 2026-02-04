@@ -93,3 +93,19 @@ if (!DISCORD_TOKEN || DISCORD_TOKEN.trim() === "") {
             console.error("❌ 登入失敗！具體原因：", err.message);
         });
 }
+// ... 以上不變 ...
+
+const loginTimer = setTimeout(() => {
+    console.log("⚠️ 登入嘗試超過 15 秒仍無回應，可能是 Token 錯誤或 IP 被暫時封鎖。");
+}, 15000);
+
+client.login(DISCORD_TOKEN)
+    .then(() => {
+        clearTimeout(loginTimer);
+        console.log("📡 已送出登入請求...");
+    })
+    .catch(err => {
+        clearTimeout(loginTimer);
+        console.error("❌ 登入失敗！具體原因：", err.message);
+    });
+
