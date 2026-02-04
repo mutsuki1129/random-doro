@@ -1,27 +1,24 @@
-// index.js (Render 穩定版)
+// index.js (Render 強力除錯版)
 const keepAlive = require('./keep_alive');
 require('dotenv').config();
 
 const { Client, GatewayIntentBits, EmbedBuilder } = require('discord.js');
-const fetch = require('node-fetch'); // 確保已運行 npm install node-fetch@2
+const fetch = require('node-fetch'); // 確保 package.json 中是 "node-fetch": "^2.6.7"
 
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN; 
 const DORO_API_URL = 'https://www.doro.asia/api/random-sticker';
 
-// 檢查環境變數
-if (!DISCORD_TOKEN) {
-    console.error("❌ 錯誤：找不到 DISCORD_TOKEN。請在 Render 的 Environment Variables 中設定它。");
-    // 不要在這裡退出，讓 Web Server 仍能啟動以便查看 Logs
-}
-
+// 建立機器人客戶端
 const client = new Client({ 
     intents: [GatewayIntentBits.Guilds] 
 });
 
+// --- 事件監聽 ---
+
 // 當機器人準備就緒時
 client.on('ready', () => {
-    console.log(`✅ 成功！機器人已上線為 ${client.user.tag}!`);
-    console.log("💡 提示：若指令未出現，請確保已運行過 node deploy-commands.js 並等待同步。");
+    console.log(`✅✅✅ 成功！機器人已正式上線：${client.user.tag}`);
+    console.log("提示：若 Discord 仍無反應，請確認是否運行過 deploy-commands.js");
 });
 
 // 監聽斜線指令
@@ -29,17 +26,17 @@ client.on('interactionCreate', async interaction => {
     if (!interaction.isChatInputCommand()) return;
 
     if (interaction.commandName === 'doro') {
-        console.log(`收到來自 ${interaction.user.tag} 的 /doro 指令`);
+        console.log(`[指令觸發] 來自使用者: ${interaction.user.tag}`);
 
         // 1. 立即延遲回覆，避免 3 秒超時
         await interaction.deferReply(); 
 
         try {
-            // 2. 獲取隨機 Doro
+            console.log("正在請求 Doro API...");
             const response = await fetch(DORO_API_URL);
             
             if (!response.ok) {
-                console.error(`API 請求失敗: ${response.status}`);
+                console.error(`API 錯誤狀態碼: ${response.status}`);
                 return await interaction.editReply('🥺 Doro 伺服器暫時沒有回應，請稍後再試。');
             }
 
@@ -53,29 +50,46 @@ client.on('interactionCreate', async interaction => {
                     .setDescription(`**描述:** ${description || "這是一隻神祕的 Doro"}`)
                     .setColor(0xFFA07A) 
                     .setImage(url)
-                    .setFooter({ text: 'Doro Asia API', iconURL: url })
+                    .setFooter({ text: 'Doro Asia API' })
                     .setTimestamp();
                 
-                // 3. 回傳結果
                 await interaction.editReply({ embeds: [embed] });
-                console.log("✅ Doro 已成功送出！");
+                console.log("✅ Doro 圖片已成功發送");
 
             } else {
-                await interaction.editReply('Oops! 格式解析失敗。');
+                await interaction.editReply('Oops! 獲取到的數據格式有誤。');
             }
         } catch (error) {
-            console.error('❌ 執行過程發生錯誤:', error);
-            await interaction.editReply('🥺 處理指令時發生錯誤，請聯絡開發者。');
+            console.error('❌ 執行指令發生錯誤:', error);
+            await interaction.editReply('🥺 處理指令時發生錯誤。');
         }
     }
 });
 
-// 啟動 Web Server (讓 Render 保持 Live)
+// 捕捉連線錯誤
+client.on('error', error => {
+    console.error('❌ Discord Client 發生錯誤:', error);
+});
+
+// --- 啟動程序 ---
+
+console.log("--- 系統啟動中 ---");
+
+// 1. 啟動 Web Server (為了 Render 存活)
 keepAlive();
 
-// 執行登入並補捉錯誤
-console.log("正在嘗試連線至 Discord...");
-client.login(DISCORD_TOKEN).catch(err => {
-    console.error("❌ 無法登入 Discord。原因：", err.message);
-    console.error("請確認您的 Token 是否正確，且已在 Render 後台設定環境變數。");
-});
+// 2. 檢查並登入 Discord
+console.log("正在檢查 Token 狀態...");
+if (!DISCORD_TOKEN || DISCORD_TOKEN.trim() === "") {
+    console.error("⛔ [嚴重錯誤] 找不到 DISCORD_TOKEN！");
+    console.error("請確認 Render 的 Environment Variables 中 Key 是 'DISCORD_TOKEN' 且 Value 正確。");
+} else {
+    console.log(`Token 長度檢查: ${DISCORD_TOKEN.length} 字元`);
+    console.log("嘗試登入 Discord...");
+    
+    client.login(DISCORD_TOKEN)
+        .then(() => console.log("📡 已送出登入請求..."))
+        .catch(err => {
+            console.error("❌ 登入失敗！具體原因：", err.message);
+        });
+}
