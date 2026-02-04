@@ -28,46 +28,39 @@ client.on('ready', () => {
 
 // 📌 核心變更：監聽 interactionCreate 事件
 client.on('interactionCreate', async interaction => {
-    // 檢查互動是否為斜線指令
     if (!interaction.isChatInputCommand()) return;
 
-    // 檢查指令名稱是否為 doro
     if (interaction.commandName === 'doro') {
-        
-        // 1. 延遲回覆 (Defer Reply)：讓使用者知道機器人正在處理請求
+        // 🚀 偵測點 A: 確認有收到互動
+        console.log(`收到來自 ${interaction.user.tag} 的 /doro 指令！`);
+
         await interaction.deferReply(); 
 
         try {
-            // 2. 調用 API
+            console.log("正在請求 Doro API..."); // 🚀 偵測點 B
             const response = await fetch(DORO_API_URL);
+            
+            if (!response.ok) {
+                console.log(`API 回應失敗，狀態碼: ${response.status}`);
+                return await interaction.editReply('API 暫時沒有回應，Doro 正在休息。');
+            }
+
             const data = await response.json();
+            console.log("API 數據獲取成功！"); // 🚀 偵測點 C
 
-            // 3. 檢查 API 響應
             if (data.success && data.sticker && data.sticker.url) {
-                const stickerUrl = data.sticker.url;
-                const description = data.sticker.description || "隨機 Doro 表情包";
-                
-                const embed = new EmbedBuilder()
-                    .setTitle('💖 隨機 Doro 出現！')
-                    .setDescription(`描述: ${description}`)
-                    .setColor(0xFFA07A) 
-                    .setImage(stickerUrl)
-                    .setTimestamp();
-                
-                // 4. 使用 editReply 編輯延遲的回覆
+                // ... 原本的 Embed 邏輯 ...
                 await interaction.editReply({ embeds: [embed] });
-
             } else {
-                // 處理 API 失敗
-                await interaction.editReply('Oops! 無法獲取 Doro 表情包數據。請稍後再試。');
+                await interaction.editReply('Oops! 數據格式錯誤。');
             }
         } catch (error) {
-            console.error('調用 Doro API 發生錯誤:', error);
-            // 處理連線錯誤
-            await interaction.editReply('🥺 對不起，連線到 Doro 服務器時發生了錯誤。');
+            console.error('❌ 發生錯誤:', error); // 🚀 偵測點 D
+            await interaction.editReply('🥺 發生內部錯誤。');
         }
     }
 });
 
 keepAlive();
 client.login(DISCORD_TOKEN);
+
